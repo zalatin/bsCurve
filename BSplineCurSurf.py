@@ -42,21 +42,41 @@ class BSplineCurSurf(object):
             mid = floor((low+high)/2)
         return mid
     
-    
+    # 计算自变量u所在区间内的所有不为零的基函数N
+    def basisFuns(self, i, u, U): # i为findSpan()的返回值
+        N = [0 for i in range(self.p+1)]
+        left = [0 for i in range(self.p+1)]
+        right = [0 for i in range(self.p+1)]
+        N[0] = 1.0
+        for j in range(1,self.p+1):
+            left[j] = u - U[i+1-j]
+            right[j] = U[i+j] - u
+            saved = 0.0
+            for r in range(j):
+                temp = N[r] / (right[r+1]+left[j-r])
+                N[r] = saved + right[r+1] * temp
+                saved = left[j-r] * temp
+            N[j] = saved
+        return N
+
 # 测试
 if __name__ == '__main__':
     pt = numpy.loadtxt('data2.txt') # 下载型值点数据
     Q = pt.tolist() # 把numpy变为list
     logging.info(Q[2])
     logging.info('---测试paraAndNodVect---')
-    BS = BSplineCurSurf(3)
-    U = BS.paraAndNodVect(Q)
+    BS = BSplineCurSurf(3) # 基函数阶数p=3
+    U = BS.paraAndNodVect(Q) # 节点集合
     logging.info(U)
     logging.info('---测试findSpan---')
-    n = len(Q) + 1
-    u = 0.05
-    i = BS.findSpan(n, u, U)
+    n = len(Q) + 1 # n为u能在的最右区间的左端索引
+    u = 0.7
+    i = BS.findSpan(n, u, U) # u 所在区间的左端索引值
     logging.info(i)
+    logging.info('---测试basisFuns---')
+    N = BS.basisFuns(i, u, U) # 计算i所在区间内所有不为零的基函数N
+    logging.info(N)
+    
 
 
 
