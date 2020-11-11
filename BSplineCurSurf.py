@@ -1,6 +1,6 @@
 from math import *
 import logging
-import numpy
+import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 
@@ -58,10 +58,33 @@ class BSplineCurSurf(object):
                 saved = left[j-r] * temp
             N[j] = saved
         return N
+    
+    # 使用三对角矩阵算法解决反求B样条控制点P
+    def solveTridiagonal(self, Q, U, P): # Q为型值点集，P为控制点集，假设P[0],P[1],P[n+1],P[n+2]已知
+        n = len(Q) - 1 # 型值点个数 = n+1
+        R = [[0 for i in range(3)] for i in range(n+1)]
+        dd = [0 for i in range(n+1)]
+        for i in range(3,n):
+            R[i] = Q[i-1]
+        abc = self.basisFuns(4, U[4], U)
+        den = abc[1]
+        P[2] = ((np.array(Q[1])-abc[0]*np.array(P[1])) / den).tolist()
+        for i in range(3,n):
+            dd[i] = abc[2] / den
+            abc = self.basisFuns(i+2,U[i+2],U)
+            den = abc[1] - abc[0] * dd[i]
+            P[i] = ((np.array(R[i])-abc[0]*np.array(P[i-1])) / den).tolist()
+        dd[n] = abc[2] / den
+        abc = self.basisFuns(n+2,U[n+2],U)
+        den = abc[1] - abc[0] * dd[n]
+        P[n] = ((np.array(Q[n-1])-abc[2]*np.array(P[n+1])-abc[0]*np.array(P[n-1])) / den).tolist()
+        for i in range(n-1,1,-1):
+            P[i] = (np.array(P[i]) - dd[i+1] * np.array(P[i+1])).tolist()
+        return P
 
 # 测试
 if __name__ == '__main__':
-    pt = numpy.loadtxt('data2.txt') # 下载型值点数据
+    pt = np.loadtxt('data2.txt') # 下载型值点数据
     Q = pt.tolist() # 把numpy变为list
     logging.info(Q[2])
     logging.info('---测试paraAndNodVect---')
@@ -76,6 +99,14 @@ if __name__ == '__main__':
     logging.info('---测试basisFuns---')
     N = BS.basisFuns(i, u, U) # 计算i所在区间内所有不为零的基函数N
     logging.info(N)
+    logging.info('---测试solveTridiagonal---')
+    P = [[0 for i in range(3)] for i in range(len(Q)+2)] # 初始化控制点集
+    P[0] = Q[0] 
+    P[len(Q)+1] = Q[-1]
+    P[1] = P[0] # 使用自由端点边界条件
+    P[len(Q)] = P[len(Q)+1] # 使用自由端点边界条件
+    P = BS.solveTridiagonal(Q, U, P)
+    logging.info(P)
     
 
 
