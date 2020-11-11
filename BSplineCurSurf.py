@@ -1,6 +1,8 @@
 from math import *
 import logging
 import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 logging.basicConfig(level=logging.INFO)
 
@@ -82,6 +84,38 @@ class BSplineCurSurf(object):
             P[i] = (np.array(P[i]) - dd[i+1] * np.array(P[i+1])).tolist()
         return P
 
+    # 计算非有理B样条曲线上的对应某一自变量u的点值
+    def curvePoint(self, n, U, P, u): # n为u能在的最右区间的左端索引，P为控制点集
+        p = self.p # 基函数阶数
+        span = self.findSpan(n, u, U)
+        N = self.basisFuns(span, u, U)
+        C = [0 for i in range(3)]
+        for i in range(p+1):
+            C = (np.array(C) + N[i] * np.array(P[span-p+i])).tolist()
+        return C
+
+    # 已知型值点，得出要求密度点的曲线
+    def curvePlot(self, Q, numpoi): # numpoi为要求的密度点数量，Q为型值点集
+        n = len(Q) # 型值点数量
+        p = self.p # 基函数阶数
+        # 第一步：计算节点矢量
+        U = self.paraAndNodVect(Q) 
+        # 第二步：反算n+2个控制点，采用自由端点边界条件
+        P = [[0 for i in range(3)] for i in range(len(Q)+2)] # 初始化控制点集
+        P[0] = Q[0] 
+        P[len(Q)+1] = Q[-1]
+        P[1] = P[0] # 使用自由端点边界条件
+        P[len(Q)] = P[len(Q)+1] # 使用自由端点边界条件
+        P = self.solveTridiagonal(Q, U, P)
+        # 第三步：求出要求密度点的曲线
+        C = [[0 for i in range(3)] for i in range(numpoi)]
+        for i in range(numpoi-1):
+            C[i] = self.curvePoint(n+p-2, U, P, i/(numpoi-1))
+        C[numpoi-1] = self.curvePoint(n+p-2, U, P, 1)
+        return C
+
+
+
 # 测试
 if __name__ == '__main__':
     pt = np.loadtxt('data2.txt') # 下载型值点数据
@@ -107,6 +141,23 @@ if __name__ == '__main__':
     P[len(Q)] = P[len(Q)+1] # 使用自由端点边界条件
     P = BS.solveTridiagonal(Q, U, P)
     logging.info(P)
+    logging.info('---测试curvePoint---')
+    C = BS.curvePoint(n, U, P, u)
+    logging.info(C)
+    logging.info('---测试curvePlot---')
+    numpoi = 101
+    Cur = BS.curvePlot(Q, numpoi) # 求得曲线上的点集
+    # 画图
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    CurA = np.array(Cur) # 把list变为array
+    np.savetxt('data2gen', CurA) # 保存曲线点集数据到.txt文件
+    ax.scatter((CurA[:,0]).tolist(), (CurA[:,1]).tolist(), (CurA[:,2]).tolist(), c='r')
+    # 添加坐标轴标记及坐标标题
+    ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
+    ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
+    ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
+    plt.show()
     
 
 
