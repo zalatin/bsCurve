@@ -8,5 +8,7 @@ c = 6
 # dierciceshi
 # nihao
 #这是一个测试合并冲突的语句
+if b > 8:
+    b = 5
 
 
