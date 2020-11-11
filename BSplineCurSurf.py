@@ -159,10 +159,3 @@ if __name__ == '__main__':
     ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
     plt.show()
     
-
-
-
-
-        
-        
-        
