@@ -7,8 +7,9 @@ from mpl_toolkits.mplot3d import Axes3D
 logging.basicConfig(level=logging.INFO)
 
 class BSplineCurSurf(object):
-    def __init__(self, p):
-        self.p = p # 基函数阶数
+    def __init__(self, p=3, q=3):
+        self.p = p # 基函数阶数,暂时固定为3
+        self.q = q # 涉及曲面问题时才用到，为纵向基函数阶数，本项目暂时固定为3
     
     # 求取节点向量U (已知型值点值Q)
     def paraAndNodVect(self, Q):
@@ -29,7 +30,8 @@ class BSplineCurSurf(object):
         return U
     
     # 找到基函数自变量u的相对于节点集合U所在区间的左端索引
-    def findSpan(self, n, u, U): # n为u能在的最右区间的左端索引
+    def findSpan(self, u, U): 
+        n = len(Q) + 1 # n为u能在的最右区间的左端索引
         if (u == U[n+1]): #特殊情况
             return n
         # 二分搜索
@@ -85,9 +87,9 @@ class BSplineCurSurf(object):
         return P
 
     # 计算非有理B样条曲线上的对应某一自变量u的点值
-    def curvePoint(self, n, U, P, u): # n为u能在的最右区间的左端索引，P为控制点集
+    def curvePoint(self, U, P, u): # P为控制点集
         p = self.p # 基函数阶数
-        span = self.findSpan(n, u, U)
+        span = self.findSpan(u, U)
         N = self.basisFuns(span, u, U)
         C = [0 for i in range(3)]
         for i in range(p+1):
@@ -96,8 +98,6 @@ class BSplineCurSurf(object):
 
     # 已知型值点，得出要求密度点的曲线
     def curvePlot(self, Q, numpoi): # numpoi为要求的密度点数量，Q为型值点集
-        n = len(Q) # 型值点数量
-        p = self.p # 基函数阶数
         # 第一步：计算节点矢量
         U = self.paraAndNodVect(Q) 
         # 第二步：反算n+2个控制点，采用自由端点边界条件
@@ -110,9 +110,29 @@ class BSplineCurSurf(object):
         # 第三步：求出要求密度点的曲线
         C = [[0 for i in range(3)] for i in range(numpoi)]
         for i in range(numpoi-1):
-            C[i] = self.curvePoint(n+p-2, U, P, i/(numpoi-1))
-        C[numpoi-1] = self.curvePoint(n+p-2, U, P, 1)
+            C[i] = self.curvePoint(U, P, i/(numpoi-1))
+        C[numpoi-1] = self.curvePoint(U, P, 1)
         return C
+
+    # 已知节点向量和控制点向量，求曲面上的点
+    def surfacePoint(self, U, V, P, u, v): # U、V分别为横向和纵向节点集合，P为控制点<P[i][j]=[x,y,z]>，u、v分别为横向和纵向基函数自变量
+        n = len(Q) + 1 # n为横向维度上u能在的最右区间的左端索引
+        m = len(Q) + 1 # m为纵向维度上v能在的最右区间的左端索引,本项目m=n
+        p = self.p # 横向基函数阶数
+        q = self.q # 纵向基函数阶数，本项目q=p
+        uspan = self.findSpan(u, U)
+        Nu = self.basisFuns(uspan, u, U)
+        vspan = self.findSpan(v, V)
+        Nv = self.basisFuns(vspan, v, V)
+        uind = uspan - p
+        S = [0 for i in range(3)]
+        for h in range(q+1):
+            temp = [0 for i in range(3)]
+            vind = vspan - q + h
+            for k in range(p+1):
+                temp = (np.array(temp) + Nu[k] * np.array(P[uind+k][vind])).tolist()
+            S = (np.array(S) + Nv[l] * np.array(temp)).tolist()
+        return S
 
 
 
@@ -122,13 +142,13 @@ if __name__ == '__main__':
     Q = pt.tolist() # 把numpy变为list
     logging.info(Q[2])
     logging.info('---测试paraAndNodVect---')
-    BS = BSplineCurSurf(3) # 基函数阶数p=3
+    BS = BSplineCurSurf() # 基函数阶数p=3
     U = BS.paraAndNodVect(Q) # 节点集合
     logging.info(U)
     logging.info('---测试findSpan---')
-    n = len(Q) + 1 # n为u能在的最右区间的左端索引
+    #n = len(Q) + 1 # n为u能在的最右区间的左端索引
     u = 0.7
-    i = BS.findSpan(n, u, U) # u 所在区间的左端索引值
+    i = BS.findSpan(u, U) # u 所在区间的左端索引值
     logging.info(i)
     logging.info('---测试basisFuns---')
     N = BS.basisFuns(i, u, U) # 计算i所在区间内所有不为零的基函数N
@@ -142,7 +162,7 @@ if __name__ == '__main__':
     P = BS.solveTridiagonal(Q, U, P)
     logging.info(P)
     logging.info('---测试curvePoint---')
-    C = BS.curvePoint(n, U, P, u)
+    C = BS.curvePoint(U, P, u)
     logging.info(C)
     logging.info('---测试curvePlot---')
     numpoi = 101
