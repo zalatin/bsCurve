@@ -30,8 +30,7 @@ class BSplineCurSurf(object):
         return U
     
     # 找到基函数自变量u的相对于节点集合U所在区间的左端索引
-    def findSpan(self, u, U): 
-        n = len(Q) + 1 # n为u能在的最右区间的左端索引
+    def findSpan(self, n, u, U):  # n为u能在的最右区间的左端索引，n=len(U)-5
         if (u == U[n+1]): #特殊情况
             return n
         # 二分搜索
@@ -87,9 +86,9 @@ class BSplineCurSurf(object):
         return P
 
     # 计算非有理B样条曲线上的对应某一自变量u的点值
-    def curvePoint(self, U, P, u): # P为控制点集
+    def curvePoint(self, n, U, P, u): # P为控制点集, n为u能在的最右区间的左端索引, n=len(U)-5
         p = self.p # 基函数阶数
-        span = self.findSpan(u, U)
+        span = self.findSpan(n, u, U)
         N = self.basisFuns(span, u, U)
         C = [0 for i in range(3)]
         for i in range(p+1):
@@ -97,7 +96,7 @@ class BSplineCurSurf(object):
         return C
 
     # 已知型值点，得出要求密度点的曲线
-    def curvePlot(self, Q, numpoi): # numpoi为要求的密度点数量，Q为型值点集
+    def curvePlot(self, n, Q, numpoi): # numpoi为要求的密度点数量，Q为型值点集, n为u能在的最右区间的左端索引, n=len(Q)+1=len(U)-5
         # 第一步：计算节点矢量
         U = self.paraAndNodVect(Q) 
         # 第二步：反算n+2个控制点，采用自由端点边界条件
@@ -110,19 +109,19 @@ class BSplineCurSurf(object):
         # 第三步：求出要求密度点的曲线
         C = [[0 for i in range(3)] for i in range(numpoi)]
         for i in range(numpoi-1):
-            C[i] = self.curvePoint(U, P, i/(numpoi-1))
-        C[numpoi-1] = self.curvePoint(U, P, 1)
+            C[i] = self.curvePoint(n, U, P, i/(numpoi-1))
+        C[numpoi-1] = self.curvePoint(n, U, P, 1)
         return C
 
     # 已知节点向量和控制点向量，求曲面上的点
-    def surfacePoint(self, U, V, P, u, v): # U、V分别为横向和纵向节点集合，P为控制点<P[i][j]=[x,y,z]>，u、v分别为横向和纵向基函数自变量
-        #n = len(Q) + 1 # n为横向维度上u能在的最右区间的左端索引
-        #m = len(Q) + 1 # m为纵向维度上v能在的最右区间的左端索引,本项目m=n
+    def surfacePoint(self, n, U, m, V, P, u, v): # U、V分别为横向和纵向节点集合，P为控制点<P[i][j]=[x,y,z]>，u、v分别为横向和纵向基函数自变量
+        #n = len(U) - 5 # n为横向维度上u能在的最右区间的左端索引
+        #m = len(V) - 5 # m为纵向维度上v能在的最右区间的左端索引
         p = self.p # 横向基函数阶数
         q = self.q # 纵向基函数阶数，本项目q=p
-        uspan = self.findSpan(u, U)
+        uspan = self.findSpan(n, u, U)
         Nu = self.basisFuns(uspan, u, U)
-        vspan = self.findSpan(v, V)
+        vspan = self.findSpan(m, v, V)
         Nv = self.basisFuns(vspan, v, V)
         uind = uspan - p
         S = [0 for i in range(3)]
@@ -146,9 +145,9 @@ if __name__ == '__main__':
     U = BS.paraAndNodVect(Q) # 节点集合
     logging.info(U)
     logging.info('---测试findSpan---')
-    #n = len(Q) + 1 # n为u能在的最右区间的左端索引
+    n = len(Q) + 1 # n为u能在的最右区间的左端索引
     u = 0.7
-    i = BS.findSpan(u, U) # u 所在区间的左端索引值
+    i = BS.findSpan(n, u, U) # u 所在区间的左端索引值
     logging.info(i)
     logging.info('---测试basisFuns---')
     N = BS.basisFuns(i, u, U) # 计算i所在区间内所有不为零的基函数N
@@ -162,11 +161,11 @@ if __name__ == '__main__':
     P = BS.solveTridiagonal(Q, U, P)
     logging.info(P)
     logging.info('---测试curvePoint---')
-    C = BS.curvePoint(U, P, u)
+    C = BS.curvePoint(n, U, P, u)
     logging.info(C)
     logging.info('---测试curvePlot---')
     numpoi = 101
-    Cur = BS.curvePlot(Q, numpoi) # 求得曲线上的点集
+    Cur = BS.curvePlot(n, Q, numpoi) # 求得曲线上的点集
     # 画图
     fig = plt.figure()
     ax = Axes3D(fig)
@@ -181,5 +180,33 @@ if __name__ == '__main__':
     #plt.pause(1) # 暂停3秒
     #plt.close() # 关闭当前显示的图像
     logging.info('---测试surfacePoint---')
-    
+    n = 4
+    m = 3
+    U = [0,0,0,0,1/2,1,1,1,1]
+    V = [0,0,0,0,1,1,1,1]
+    P = [[[0 for i in range(3)] for i in range(4)] for i in range(5)]
+    P[0][0] = [0,0,0];P[1][0] = [3,0,3];P[2][0] = [6,0,3];P[3][0] = [9,0,0];P[4][0] = [12,0,3]
+    P[0][1] = [0,2,2];P[1][1] = [3,2,5];P[2][1] = [6,2,5];P[3][1] = [9,2,2];P[4][1] = [12,2,5]
+    P[0][2] = [0,4,0];P[1][2] = [3,4,3];P[2][2] = [6,4,3];P[3][2] = [9,4,0];P[4][2] = [12,4,3]
+    P[0][3] = [0,6,2];P[1][3] = [3,6,5];P[2][3] = [6,6,5];P[3][3] = [9,6,2];P[4][3] = [12,6,5]
+    num = 100
+    S = [[0 for i in range(num+1)] for i in range(num+1)]
+    for i in range(num+1):
+        logging.info(i)
+        u = i / num
+        for j in range(num+1):
+            v = j / num
+            S[i][j] = BS.surfacePoint(n, U, m, V, P, u, v)
+    # 画图
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    SA = np.array(S) # 把list变为array
+    #np.savetxt('data2gen', CurA) # 保存曲线点集数据到.txt文件
+    ax.scatter((SA[:,:,0]).tolist(), (SA[:,:,1]).tolist(), (SA[:,:,2]).tolist(), c='r')
+    # 添加坐标轴标记及坐标标题
+    ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
+    ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
+    ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
+    plt.show() # 显示图像
+
     
