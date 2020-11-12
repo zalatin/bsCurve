@@ -133,6 +133,61 @@ class BSplineCurSurf(object):
             S = (np.array(S) + Nv[h] * np.array(temp)).tolist()
         return S
 
+    # 已知曲面上的点，求控制点和节点向量
+    def globalSurfInterp(self, Q): # Q为曲面上的型值点，Q[i][j]=[x,y,z]
+        Qarray = np.array(Q) # 把list变为array
+        n = len(Qarray[:,0]) # 横向型值点个数
+        m = len(Qarray[0,:]) # 纵向型值点个数
+        p = self.p # 横向基函数阶数
+        q = self.q # 纵向基函数阶数
+        # 计算横向的节点向量U
+        U = [0 for i in range(n+p+3)]
+        for h in range(m):
+            U = (np.array(U) + np.array(self.paraAndNodVect((Qarray[:,h]).tolist))).tolist
+        U = (np.array(U) / m).tolist
+        # 计算纵向的节点向量V
+        V = [0 for i in range(m+q+3)]
+        for k in range(n):
+            V = (np.array(V) + np.array(self.paraAndNodVect((Qarray[k,:]).tolist))).tolist
+        V = (np.array(V) / n).tolist
+        # 计算控制点P --- (n+2)*(m+2)
+        R = [[[0 for i in range(3)] for i in range(m)] for i in range(n+2)] # 初始化控制点集
+        for h in range(m+1):
+            # 构造插值于点Q[0][h],...,Q[n][h]的曲线
+            #     得到控制点R[0][h],...,R[n][h]
+            #
+            # Q为型值点集, n为u能在的最右区间的左端索引, n=len(Q)+1=len(U)-5
+            # 第一步：计算节点矢量
+            Ur = self.paraAndNodVect((Qarray[:,h]).tolist) 
+            # 第二步：反算n+2个控制点，采用自由端点边界条件
+            #R = [[[0 for i in range(3)] for i in range(m)] for i in range(n+2)] # 初始化控制点集
+            R[0][h] = Q[0][h] 
+            R[len(Qarray[:,h])+1][h] = Q[-1][h]
+            R[1][h] = R[0][h] # 使用自由端点边界条件
+            R[len(Qarray[:,h])][h] = R[len(Qarray[:,h])+1][h] # 使用自由端点边界条件
+            Rtemp = np.array(R) # 处理数据
+            Rtemp[:,h] = np.array(self.solveTridiagonal((Qarray[:,h]).tolist, Ur, (Rtemp[:,h]).tolist))
+            R = Rtemp.tolist
+
+        P = [[[0 for i in range(3)] for i in range(m+2)] for i in range(n+2)] # 初始化控制点集
+        Rarray = np.array(R)
+        for i in range(n+3):
+            # 构造插值于点R[i][0],...,R[i][m]的曲线
+            #     得到控制点P[i][0],...,P[i][m]
+            #
+            # Q为型值点集, n为u能在的最右区间的左端索引, n=len(Q)+1=len(U)-5
+            # 第一步：计算节点矢量
+            Ur = self.paraAndNodVect((Rarray[i,:]).tolist) 
+            # 第二步：反算n+2个控制点，采用自由端点边界条件
+            #R = [[[0 for i in range(3)] for i in range(m)] for i in range(n+2)] # 初始化控制点集
+            P[i][0] = R[i][0] 
+            P[i][len(Rarray[i,:])+1] = R[i][-1]
+            P[i][1] = P[i][0] # 使用自由端点边界条件
+            P[i][len(Rarray[i,:])] = P[i][len(Rarray[i,i])+1] # 使用自由端点边界条件
+            Ptemp = np.array(P) # 处理数据
+            Ptemp[i,:] = np.array(self.solveTridiagonal((Rarray[i,:]).tolist, Ur, (Ptemp[i,:]).tolist))
+            P = Ptemp.tolist
+
 
 
 # 测试
@@ -180,8 +235,8 @@ if __name__ == '__main__':
     #plt.pause(1) # 暂停3秒
     #plt.close() # 关闭当前显示的图像
     logging.info('---测试surfacePoint---')
-    n = 4
-    m = 3
+    n = 4 # n = len(U) - 5 # n为横向维度上u能在的最右区间的左端索引
+    m = 3 # m = len(V) - 5 # m为纵向维度上v能在的最右区间的左端索引
     U = [0,0,0,0,1/2,1,1,1,1]
     V = [0,0,0,0,1,1,1,1]
     P = [[[0 for i in range(3)] for i in range(4)] for i in range(5)]
@@ -208,5 +263,8 @@ if __name__ == '__main__':
     ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
     ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
     plt.show() # 显示图像
+    PA = np.array(P)
+    PA[1,0,:]=np.array([0,0,0])
+    logging.info(PA[1,:,:])
 
     
