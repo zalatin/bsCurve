@@ -131,7 +131,7 @@ class BSplineCurSurf(object):
             vind = vspan - q + h
             for k in range(p+1):
                 temp = (np.array(temp) + Nu[k] * np.array(P[uind+k][vind])).tolist()
-            S = (np.array(S) + Nv[l] * np.array(temp)).tolist()
+            S = (np.array(S) + Nv[h] * np.array(temp)).tolist()
         return S
 
 
