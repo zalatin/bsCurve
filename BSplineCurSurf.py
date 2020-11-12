@@ -116,8 +116,8 @@ class BSplineCurSurf(object):
 
     # 已知节点向量和控制点向量，求曲面上的点
     def surfacePoint(self, U, V, P, u, v): # U、V分别为横向和纵向节点集合，P为控制点<P[i][j]=[x,y,z]>，u、v分别为横向和纵向基函数自变量
-        n = len(Q) + 1 # n为横向维度上u能在的最右区间的左端索引
-        m = len(Q) + 1 # m为纵向维度上v能在的最右区间的左端索引,本项目m=n
+        #n = len(Q) + 1 # n为横向维度上u能在的最右区间的左端索引
+        #m = len(Q) + 1 # m为纵向维度上v能在的最右区间的左端索引,本项目m=n
         p = self.p # 横向基函数阶数
         q = self.q # 纵向基函数阶数，本项目q=p
         uspan = self.findSpan(u, U)
@@ -177,5 +177,9 @@ if __name__ == '__main__':
     ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
     ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
     ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
-    plt.show()
+    plt.show() # 显示图像
+    #plt.pause(1) # 暂停3秒
+    #plt.close() # 关闭当前显示的图像
+    logging.info('---测试surfacePoint---')
+    
     
