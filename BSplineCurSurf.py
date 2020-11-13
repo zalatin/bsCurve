@@ -292,5 +292,49 @@ if __name__ == '__main__':
     ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
     ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
     plt.show() # 显示图像
+    logging.info('---测试实际曲面采样数据---')
+    ptS = np.loadtxt('dataS02.txt') # 下载型值点数据
+    ptSA = ptS.tolist() # 把numpy变为list
+    nS = 3 # 行数
+    mS = 3 # 列数
+    QS = [[0 for i in range(mS)] for i in range(nS)]
+    for j in range(mS):
+        for i in range(nS):
+            QS[i][j] = ptS[nS*j+i]
+    U, V, P = BS.globalSurfInterp(QS)
+    n = len(U) - 5 # 横向u能在的最右区间的左端索引
+    m = len(V) - 5 # 纵向v能在的最右区间的左端索引
+    numIn = 100
+    SIn = [[0 for i in range(numIn+1)] for i in range(numIn+1)] # 生成的曲面采样点
+    for i in range(numIn+1):
+        logging.info(i)
+        u = i / numIn
+        for j in range(numIn+1):
+            v = j / numIn
+            SIn[i][j] = BS.surfacePoint(n, U, m, V, P, u, v)
+    # 画图
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    SInA = np.array(SIn) # 把list变为array
+    ax.scatter((SInA[:,:,0]).tolist(), (SInA[:,:,1]).tolist(), (SInA[:,:,2]).tolist(), c='r',s=5)
+    # 添加坐标轴标记及坐标标题
+    ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
+    ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
+    ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
+    plt.show() # 显示图像
+    SA = np.loadtxt('dataSurf.txt') # 下载型值点数据
+    #ptSA = ptS.tolist() # 把numpy变为list
+    # 画图
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    #SA = np.array(S) # 把list变为array
+    #np.savetxt('data2gen', CurA) # 保存曲线点集数据到.txt文件
+    ax.scatter((SA[:,0]).tolist(), (SA[:,1]).tolist(), (SA[:,2]).tolist(), c='r')
+    # 添加坐标轴标记及坐标标题
+    ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
+    ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
+    ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
+    plt.show() # 显示图像
+
 
     
