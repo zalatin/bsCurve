@@ -119,10 +119,10 @@ class BSplineCurSurf(object):
         #m = len(V) - 5 # m为纵向维度上v能在的最右区间的左端索引
         p = self.p # 横向基函数阶数
         q = self.q # 纵向基函数阶数，本项目q=p
-        uspan = self.findSpan(n, u, U)
-        Nu = self.basisFuns(uspan, u, U)
-        vspan = self.findSpan(m, v, V)
-        Nv = self.basisFuns(vspan, v, V)
+        uspan = self.findSpan(n, u, U) # 横向索引
+        Nu = self.basisFuns(uspan, u, U) # 横向非零基函数
+        vspan = self.findSpan(m, v, V) # 纵向索引
+        Nv = self.basisFuns(vspan, v, V) # 纵向非零基函数
         uind = uspan - p
         S = [0 for i in range(3)]
         for h in range(q+1):
@@ -142,25 +142,32 @@ class BSplineCurSurf(object):
         q = self.q # 纵向基函数阶数
         # 计算横向的节点向量U
         U = [0 for i in range(n+p+3)]
+        numm = m
         for h in range(m):
+            Utemp = U
             U = (np.array(U) + np.array(self.paraAndNodVect((Qarray[:,h]).tolist()))).tolist()
-        U = (np.array(U) / m).tolist()
+            if (Utemp == U): # 列数退化处理(适用于三角类型曲面)
+                numm = numm - 1
+        U = (np.array(U) / numm).tolist()
         # 计算纵向的节点向量V
         V = [0 for i in range(m+q+3)]
+        numn = n
         for k in range(n):
+            Vtemp = V
             V = (np.array(V) + np.array(self.paraAndNodVect((Qarray[k,:]).tolist()))).tolist()
-        V = (np.array(V) / n).tolist()
+            if (Vtemp == V): # 行数退化处理(适用于三角类型曲面)
+                numn = numn - 1
+        V = (np.array(V) / numn).tolist()
         # 计算控制点P --- (n+2)*(m+2)
-        R = [[[0 for i in range(3)] for i in range(m)] for i in range(n+2)] # 初始化控制点集
+        R = [[[0 for i in range(3)] for i in range(m)] for i in range(n+2)] # 初始化临时控制点集
         for h in range(m):
             # 构造插值于点Q[0][h],...,Q[n-1][h]的曲线
-            #     得到控制点R[0][h],...,R[n+1][h]
+            #     得到临时控制点R[0][h],...,R[n+1][h]
             #
-            # Q为型值点集, n为u能在的最右区间的左端索引, n=len(Q)+1=len(U)-5
+            # Q为型值点集
             # 第一步：计算节点矢量
             Ur = self.paraAndNodVect((Qarray[:,h]).tolist()) 
             # 第二步：反算n+2个临时控制点，采用自由端点边界条件
-            #R = [[[0 for i in range(3)] for i in range(m)] for i in range(n+2)] # 初始化控制点集
             R[0][h] = Q[0][h] 
             R[len(Qarray[:,h])+1][h] = Q[-1][h]
             R[1][h] = R[0][h] # 使用自由端点边界条件
@@ -175,11 +182,10 @@ class BSplineCurSurf(object):
             # 构造插值于点R[i][0],...,R[i][m-1]的曲线
             #     得到控制点P[i][0],...,P[i][m+1]
             #
-            # R为型值点集, n为u能在的最右区间的左端索引, n=len(R)+1=len(V)-5
+            # R为临时型值点集
             # 第一步：计算节点矢量
             Uc = self.paraAndNodVect((Rarray[i,:]).tolist()) 
             # 第二步：反算n+2个控制点，采用自由端点边界条件
-            #R = [[[0 for i in range(3)] for i in range(m)] for i in range(n+2)] # 初始化控制点集
             P[i][0] = R[i][0] 
             P[i][len(Rarray[i,:])+1] = R[i][-1]
             P[i][1] = P[i][0] # 使用自由端点边界条件
@@ -238,9 +244,9 @@ if __name__ == '__main__':
     logging.info('---测试surfacePoint---')
     n = 4 # n = len(U) - 5 # n为横向维度上u能在的最右区间的左端索引
     m = 3 # m = len(V) - 5 # m为纵向维度上v能在的最右区间的左端索引
-    U = [0,0,0,0,1/2,1,1,1,1]
-    V = [0,0,0,0,1,1,1,1]
-    P = [[[0 for i in range(3)] for i in range(4)] for i in range(5)]
+    U = [0,0,0,0,1/2,1,1,1,1] # 横向节点向量
+    V = [0,0,0,0,1,1,1,1] # 纵向节点向量
+    P = [[[0 for i in range(3)] for i in range(4)] for i in range(5)] # 控制点集
     P[0][0] = [0,0,0];P[1][0] = [3,0,3];P[2][0] = [6,0,3];P[3][0] = [9,0,0];P[4][0] = [12,0,3]
     P[0][1] = [0,2,2];P[1][1] = [3,2,5];P[2][1] = [6,2,5];P[3][1] = [9,2,2];P[4][1] = [12,2,5]
     P[0][2] = [0,4,0];P[1][2] = [3,4,3];P[2][2] = [6,4,3];P[3][2] = [9,4,0];P[4][2] = [12,4,3]
@@ -264,15 +270,12 @@ if __name__ == '__main__':
     ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
     ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
     plt.show() # 显示图像
-    PA = np.array(P)
-    PA[1,0,:]=np.array([0,0,0])
-    logging.info(PA[1,:,:])
     logging.info('---测试globalSurfInterp---')
     U, V, P = BS.globalSurfInterp(S)
-    n = len(U) - 5
-    m = len(V) - 5
-    numIn = 100
-    SIn = [[0 for i in range(numIn+1)] for i in range(numIn+1)]
+    n = len(U) - 5 # 横向u能在的最右区间的左端索引
+    m = len(V) - 5 # 纵向v能在的最右区间的左端索引
+    numIn = 100 
+    SIn = [[0 for i in range(numIn+1)] for i in range(numIn+1)] # 生成的曲面采样点
     for i in range(numIn+1):
         logging.info(i)
         u = i / numIn
