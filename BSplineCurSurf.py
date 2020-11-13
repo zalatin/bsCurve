@@ -143,50 +143,51 @@ class BSplineCurSurf(object):
         # 计算横向的节点向量U
         U = [0 for i in range(n+p+3)]
         for h in range(m):
-            U = (np.array(U) + np.array(self.paraAndNodVect((Qarray[:,h]).tolist))).tolist
-        U = (np.array(U) / m).tolist
+            U = (np.array(U) + np.array(self.paraAndNodVect((Qarray[:,h]).tolist()))).tolist()
+        U = (np.array(U) / m).tolist()
         # 计算纵向的节点向量V
         V = [0 for i in range(m+q+3)]
         for k in range(n):
-            V = (np.array(V) + np.array(self.paraAndNodVect((Qarray[k,:]).tolist))).tolist
-        V = (np.array(V) / n).tolist
+            V = (np.array(V) + np.array(self.paraAndNodVect((Qarray[k,:]).tolist()))).tolist()
+        V = (np.array(V) / n).tolist()
         # 计算控制点P --- (n+2)*(m+2)
         R = [[[0 for i in range(3)] for i in range(m)] for i in range(n+2)] # 初始化控制点集
-        for h in range(m+1):
-            # 构造插值于点Q[0][h],...,Q[n][h]的曲线
-            #     得到控制点R[0][h],...,R[n][h]
+        for h in range(m):
+            # 构造插值于点Q[0][h],...,Q[n-1][h]的曲线
+            #     得到控制点R[0][h],...,R[n+1][h]
             #
             # Q为型值点集, n为u能在的最右区间的左端索引, n=len(Q)+1=len(U)-5
             # 第一步：计算节点矢量
-            Ur = self.paraAndNodVect((Qarray[:,h]).tolist) 
-            # 第二步：反算n+2个控制点，采用自由端点边界条件
+            Ur = self.paraAndNodVect((Qarray[:,h]).tolist()) 
+            # 第二步：反算n+2个临时控制点，采用自由端点边界条件
             #R = [[[0 for i in range(3)] for i in range(m)] for i in range(n+2)] # 初始化控制点集
             R[0][h] = Q[0][h] 
             R[len(Qarray[:,h])+1][h] = Q[-1][h]
             R[1][h] = R[0][h] # 使用自由端点边界条件
             R[len(Qarray[:,h])][h] = R[len(Qarray[:,h])+1][h] # 使用自由端点边界条件
             Rtemp = np.array(R) # 处理数据
-            Rtemp[:,h] = np.array(self.solveTridiagonal((Qarray[:,h]).tolist, Ur, (Rtemp[:,h]).tolist))
-            R = Rtemp.tolist
+            Rtemp[:,h] = np.array(self.solveTridiagonal((Qarray[:,h]).tolist(), Ur, (Rtemp[:,h]).tolist()))
+            R = Rtemp.tolist()
 
         P = [[[0 for i in range(3)] for i in range(m+2)] for i in range(n+2)] # 初始化控制点集
         Rarray = np.array(R)
-        for i in range(n+3):
-            # 构造插值于点R[i][0],...,R[i][m]的曲线
-            #     得到控制点P[i][0],...,P[i][m]
+        for i in range(n+2):
+            # 构造插值于点R[i][0],...,R[i][m-1]的曲线
+            #     得到控制点P[i][0],...,P[i][m+1]
             #
-            # Q为型值点集, n为u能在的最右区间的左端索引, n=len(Q)+1=len(U)-5
+            # R为型值点集, n为u能在的最右区间的左端索引, n=len(R)+1=len(V)-5
             # 第一步：计算节点矢量
-            Ur = self.paraAndNodVect((Rarray[i,:]).tolist) 
+            Uc = self.paraAndNodVect((Rarray[i,:]).tolist()) 
             # 第二步：反算n+2个控制点，采用自由端点边界条件
             #R = [[[0 for i in range(3)] for i in range(m)] for i in range(n+2)] # 初始化控制点集
             P[i][0] = R[i][0] 
             P[i][len(Rarray[i,:])+1] = R[i][-1]
             P[i][1] = P[i][0] # 使用自由端点边界条件
-            P[i][len(Rarray[i,:])] = P[i][len(Rarray[i,i])+1] # 使用自由端点边界条件
+            P[i][len(Rarray[i,:])] = P[i][len(Rarray[i,:])+1] # 使用自由端点边界条件
             Ptemp = np.array(P) # 处理数据
-            Ptemp[i,:] = np.array(self.solveTridiagonal((Rarray[i,:]).tolist, Ur, (Ptemp[i,:]).tolist))
-            P = Ptemp.tolist
+            Ptemp[i,:] = np.array(self.solveTridiagonal((Rarray[i,:]).tolist(), Uc, (Ptemp[i,:]).tolist()))
+            P = Ptemp.tolist()
+        return U, V, P
 
 
 
@@ -244,13 +245,13 @@ if __name__ == '__main__':
     P[0][1] = [0,2,2];P[1][1] = [3,2,5];P[2][1] = [6,2,5];P[3][1] = [9,2,2];P[4][1] = [12,2,5]
     P[0][2] = [0,4,0];P[1][2] = [3,4,3];P[2][2] = [6,4,3];P[3][2] = [9,4,0];P[4][2] = [12,4,3]
     P[0][3] = [0,6,2];P[1][3] = [3,6,5];P[2][3] = [6,6,5];P[3][3] = [9,6,2];P[4][3] = [12,6,5]
-    num = 100
-    S = [[0 for i in range(num+1)] for i in range(num+1)]
-    for i in range(num+1):
+    numr = 10;numc = 5
+    S = [[0 for i in range(numc+1)] for i in range(numr+1)]
+    for i in range(numr+1):
         logging.info(i)
-        u = i / num
-        for j in range(num+1):
-            v = j / num
+        u = i / numr
+        for j in range(numc+1):
+            v = j / numc
             S[i][j] = BS.surfacePoint(n, U, m, V, P, u, v)
     # 画图
     fig = plt.figure()
@@ -266,5 +267,27 @@ if __name__ == '__main__':
     PA = np.array(P)
     PA[1,0,:]=np.array([0,0,0])
     logging.info(PA[1,:,:])
+    logging.info('---测试globalSurfInterp---')
+    U, V, P = BS.globalSurfInterp(S)
+    n = len(U) - 5
+    m = len(V) - 5
+    numIn = 100
+    SIn = [[0 for i in range(numIn+1)] for i in range(numIn+1)]
+    for i in range(numIn+1):
+        logging.info(i)
+        u = i / numIn
+        for j in range(numIn+1):
+            v = j / numIn
+            SIn[i][j] = BS.surfacePoint(n, U, m, V, P, u, v)
+    # 画图
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    SInA = np.array(SIn) # 把list变为array
+    ax.scatter((SInA[:,:,0]).tolist(), (SInA[:,:,1]).tolist(), (SInA[:,:,2]).tolist(), c='r')
+    # 添加坐标轴标记及坐标标题
+    ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
+    ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
+    ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
+    plt.show() # 显示图像
 
     
