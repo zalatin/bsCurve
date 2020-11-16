@@ -247,99 +247,99 @@ class BSplineCurSurf(object):
 
 # 测试
 if __name__ == '__main__':
-    # pt = np.loadtxt('data2.txt') # 下载型值点数据
-    # Q = pt.tolist() # 把numpy变为list
-    # logging.info(Q[2])
-    # logging.info('---测试paraAndNodVect---')
+    pt = np.loadtxt('data2.txt') # 下载型值点数据
+    Q = pt.tolist() # 把numpy变为list
+    logging.info(Q[2])
+    logging.info('---测试paraAndNodVect---')
     BS = BSplineCurSurf() # 基函数阶数p=3
-    # U = BS.paraAndNodVect(Q) # 节点集合
-    # logging.info(U)
-    # logging.info('---测试findSpan---')
-    # n = len(Q) + 1 # n为u能在的最右区间的左端索引
-    # u = 0.7
-    # i = BS.findSpan(n, u, U) # u 所在区间的左端索引值
-    # logging.info(i)
-    # logging.info('---测试basisFuns---')
-    # N = BS.basisFuns(i, u, U) # 计算i所在区间内所有不为零的基函数N
-    # logging.info(N)
-    # logging.info('---测试solveTridiagonal---')
-    # P = [[0 for i in range(3)] for i in range(len(Q)+2)] # 初始化控制点集
-    # P[0] = Q[0] 
-    # P[len(Q)+1] = Q[-1]
-    # P[1] = P[0] # 使用自由端点边界条件
-    # P[len(Q)] = P[len(Q)+1] # 使用自由端点边界条件
-    # P = BS.solveTridiagonal(Q, U, P)
-    # logging.info(P)
-    # logging.info('---测试curvePoint---')
-    # C = BS.curvePoint(n, U, P, u)
-    # logging.info(C)
-    # logging.info('---测试curvePlot---')
-    # numpoi = 31
-    # Cur = BS.curvePlot(Q, numpoi) # 求得曲线上的点集
-    # # 画图
-    # fig = plt.figure()
-    # ax = Axes3D(fig)
-    # CurA = np.array(Cur) # 把list变为array
-    # np.savetxt('data2gen', CurA) # 保存曲线点集数据到.txt文件
-    # ax.scatter((CurA[:,0]).tolist(), (CurA[:,1]).tolist(), (CurA[:,2]).tolist(), c='r')
-    # # 添加坐标轴标记及坐标标题
-    # ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
-    # ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
-    # ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
-    # plt.show() # 显示图像
-    # #plt.pause(1) # 暂停3秒
-    # #plt.close() # 关闭当前显示的图像
-    # logging.info('---测试surfacePoint---')
-    # n = 4 # n = len(U) - 5 # n为横向维度上u能在的最右区间的左端索引
-    # m = 3 # m = len(V) - 5 # m为纵向维度上v能在的最右区间的左端索引
-    # U = [0,0,0,0,1/2,1,1,1,1] # 横向节点向量
-    # V = [0,0,0,0,1,1,1,1] # 纵向节点向量
-    # P = [[[0 for i in range(3)] for i in range(4)] for i in range(5)] # 控制点集
-    # P[0][0] = [0,0,0];P[1][0] = [3,0,3];P[2][0] = [6,0,3];P[3][0] = [9,0,0];P[4][0] = [12,0,3]
-    # P[0][1] = [0,2,2];P[1][1] = [3,2,5];P[2][1] = [6,2,5];P[3][1] = [9,2,2];P[4][1] = [12,2,5]
-    # P[0][2] = [0,4,0];P[1][2] = [3,4,3];P[2][2] = [6,4,3];P[3][2] = [9,4,0];P[4][2] = [12,4,3]
-    # P[0][3] = [0,6,2];P[1][3] = [3,6,5];P[2][3] = [6,6,5];P[3][3] = [9,6,2];P[4][3] = [12,6,5]
-    # numr = 10;numc = 5
-    # S = [[0 for i in range(numc+1)] for i in range(numr+1)]
-    # for i in range(numr+1):
-    #     logging.info(i)
-    #     u = i / numr
-    #     for j in range(numc+1):
-    #         v = j / numc
-    #         S[i][j] = BS.surfacePoint(n, U, m, V, P, u, v)
-    # # 画图
-    # fig = plt.figure()
-    # ax = Axes3D(fig)
-    # SA = np.array(S) # 把list变为array
-    # #np.savetxt('data2gen', CurA) # 保存曲线点集数据到.txt文件
-    # ax.scatter((SA[:,:,0]).tolist(), (SA[:,:,1]).tolist(), (SA[:,:,2]).tolist(), c='r')
-    # # 添加坐标轴标记及坐标标题
-    # ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
-    # ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
-    # ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
-    # plt.show() # 显示图像
-    # logging.info('---测试globalSurfInterp---')
-    # U, V, P = BS.globalSurfInterp(S)
-    # n = len(U) - 5 # 横向u能在的最右区间的左端索引
-    # m = len(V) - 5 # 纵向v能在的最右区间的左端索引
-    # numIn = 30 
-    # SIn = [[0 for i in range(numIn+1)] for i in range(numIn+1)] # 生成的曲面采样点
-    # for i in range(numIn+1):
-    #     logging.info(i)
-    #     u = i / numIn
-    #     for j in range(numIn+1):
-    #         v = j / numIn
-    #         SIn[i][j] = BS.surfacePoint(n, U, m, V, P, u, v)
-    # # 画图
-    # fig = plt.figure()
-    # ax = Axes3D(fig)
-    # SInA = np.array(SIn) # 把list变为array
-    # ax.scatter((SInA[:,:,0]).tolist(), (SInA[:,:,1]).tolist(), (SInA[:,:,2]).tolist(), c='r')
-    # # 添加坐标轴标记及坐标标题
-    # ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
-    # ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
-    # ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
-    # plt.show() # 显示图像
+    U = BS.paraAndNodVect(Q) # 节点集合
+    logging.info(U)
+    logging.info('---测试findSpan---')
+    n = len(Q) + 1 # n为u能在的最右区间的左端索引
+    u = 0.7
+    i = BS.findSpan(n, u, U) # u 所在区间的左端索引值
+    logging.info(i)
+    logging.info('---测试basisFuns---')
+    N = BS.basisFuns(i, u, U) # 计算i所在区间内所有不为零的基函数N
+    logging.info(N)
+    logging.info('---测试solveTridiagonal---')
+    P = [[0 for i in range(3)] for i in range(len(Q)+2)] # 初始化控制点集
+    P[0] = Q[0] 
+    P[len(Q)+1] = Q[-1]
+    P[1] = P[0] # 使用自由端点边界条件
+    P[len(Q)] = P[len(Q)+1] # 使用自由端点边界条件
+    P = BS.solveTridiagonal(Q, U, P)
+    logging.info(P)
+    logging.info('---测试curvePoint---')
+    C = BS.curvePoint(n, U, P, u)
+    logging.info(C)
+    logging.info('---测试curvePlot---')
+    numpoi = 31
+    Cur = BS.curvePlot(Q, numpoi) # 求得曲线上的点集
+    # 画图
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    CurA = np.array(Cur) # 把list变为array
+    np.savetxt('data2gen', CurA) # 保存曲线点集数据到.txt文件
+    ax.scatter((CurA[:,0]).tolist(), (CurA[:,1]).tolist(), (CurA[:,2]).tolist(), c='r')
+    # 添加坐标轴标记及坐标标题
+    ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
+    ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
+    ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
+    plt.show() # 显示图像
+    #plt.pause(1) # 暂停3秒
+    #plt.close() # 关闭当前显示的图像
+    logging.info('---测试surfacePoint---')
+    n = 4 # n = len(U) - 5 # n为横向维度上u能在的最右区间的左端索引
+    m = 3 # m = len(V) - 5 # m为纵向维度上v能在的最右区间的左端索引
+    U = [0,0,0,0,1/2,1,1,1,1] # 横向节点向量
+    V = [0,0,0,0,1,1,1,1] # 纵向节点向量
+    P = [[[0 for i in range(3)] for i in range(4)] for i in range(5)] # 控制点集
+    P[0][0] = [0,0,0];P[1][0] = [3,0,3];P[2][0] = [6,0,3];P[3][0] = [9,0,0];P[4][0] = [12,0,3]
+    P[0][1] = [0,2,2];P[1][1] = [3,2,5];P[2][1] = [6,2,5];P[3][1] = [9,2,2];P[4][1] = [12,2,5]
+    P[0][2] = [0,4,0];P[1][2] = [3,4,3];P[2][2] = [6,4,3];P[3][2] = [9,4,0];P[4][2] = [12,4,3]
+    P[0][3] = [0,6,2];P[1][3] = [3,6,5];P[2][3] = [6,6,5];P[3][3] = [9,6,2];P[4][3] = [12,6,5]
+    numr = 10;numc = 5
+    S = [[0 for i in range(numc+1)] for i in range(numr+1)]
+    for i in range(numr+1):
+        logging.info(i)
+        u = i / numr
+        for j in range(numc+1):
+            v = j / numc
+            S[i][j] = BS.surfacePoint(n, U, m, V, P, u, v)
+    # 画图
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    SA = np.array(S) # 把list变为array
+    #np.savetxt('data2gen', CurA) # 保存曲线点集数据到.txt文件
+    ax.scatter((SA[:,:,0]).tolist(), (SA[:,:,1]).tolist(), (SA[:,:,2]).tolist(), c='r')
+    # 添加坐标轴标记及坐标标题
+    ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
+    ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
+    ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
+    plt.show() # 显示图像
+    logging.info('---测试globalSurfInterp---')
+    U, V, P = BS.globalSurfInterp(S)
+    n = len(U) - 5 # 横向u能在的最右区间的左端索引
+    m = len(V) - 5 # 纵向v能在的最右区间的左端索引
+    numIn = 30 
+    SIn = [[0 for i in range(numIn+1)] for i in range(numIn+1)] # 生成的曲面采样点
+    for i in range(numIn+1):
+        logging.info(i)
+        u = i / numIn
+        for j in range(numIn+1):
+            v = j / numIn
+            SIn[i][j] = BS.surfacePoint(n, U, m, V, P, u, v)
+    # 画图
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    SInA = np.array(SIn) # 把list变为array
+    ax.scatter((SInA[:,:,0]).tolist(), (SInA[:,:,1]).tolist(), (SInA[:,:,2]).tolist(), c='r')
+    # 添加坐标轴标记及坐标标题
+    ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
+    ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
+    ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
+    plt.show() # 显示图像
     logging.info('---测试算法对于实际曲面采样数据的曲面重构效果---')
     SA = np.loadtxt('yiziban.txt') # 下载型值点数据
     SA[:,1] = SA[:,1] + SA[:,3]
@@ -351,6 +351,7 @@ if __name__ == '__main__':
             Qtry[qtag] = (SA[flag:i,0:3]).tolist()
             qtag = qtag + 1
             flag = i + 1
+    # 简单处理，使得每一列的型值点都为numpoi个
     numpoi = 10
     Cur = [0 for i in range(8)]
     for i in range(8):
