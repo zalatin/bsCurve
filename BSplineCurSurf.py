@@ -28,6 +28,16 @@ class BSplineCurSurf(object):
         for i in range(p+1, n+p-1):
             U[i] = U[i-1] + temp[i-p-1] / sumtemp # 内节点
         return U
+
+    # 给三维型值点加权且升级为四维型值点
+    def weigTyvalPoint(self, Q, h): # Q为三维型值点，h为对应每个型值点的权重
+        n = len(Q)
+        Q4 = [[0 for i in range(4)] for i in range(n)]
+        QA = np.array(Q)
+        for i in range(n):
+            Q4[i][0:3] = (QA[i,:] * h[i]).tolist()
+            Q4[i][3] = h[i]
+        return Q4
     
     # 找到基函数自变量u的相对于节点集合U所在区间的左端索引
     def findSpan(self, n, u, U):  # n为u能在的最右区间的左端索引，n=len(U)-5
@@ -94,6 +104,22 @@ class BSplineCurSurf(object):
         for i in range(p+1):
             C = (np.array(C) + N[i] * np.array(P[span-p+i])).tolist()
         return C
+    
+    # 计算某一u值下的有理B样条曲线值
+    def curvePointNURBS(self, U, Pw, u):
+        n = len(U) - 5 # n为u能在的最右区间的左端索引
+        p = self.p # 基函数阶数
+        span = self.findSpan(n, u, U)
+        N = self.basisFuns(span, u, U)
+        Cw = [0 for i in range(4)]
+        for i in range(p+1):
+            Cw = (np.array(Cw) + N[i] * np.array(Pw[span-p+i])).tolist()
+        if (Cw[3] != 0):
+            C = [Cw[0]/Cw[3], Cw[1]/Cw[3], Cw[2]/Cw[3]]
+        else:
+            absCw = sqrt(pow(Cw[0],2)+pow(Cw[1],2)+pow(Cw[2],2))
+            C = [Cw[0]/absCw, Cw[1]/absCw, Cw[2]/absCw]
+        return C
 
     # 已知型值点，得出要求密度点的曲线
     def curvePlot(self, Q, numpoi): # numpoi为要求的密度点数量，Q为型值点集
@@ -112,6 +138,27 @@ class BSplineCurSurf(object):
         for i in range(numpoi-1):
             C[i] = self.curvePoint(n, U, P, i/(numpoi-1))
         C[numpoi-1] = self.curvePoint(n, U, P, 1)
+        return C
+
+    # 已知型值点，使用NURBS得出要求密度点的曲线
+    def curvePlotNURBS(self, Q, numpoi): # numpoi为要求的密度点数量，Q为型值点集
+        n = len(Q) + 1 # n为u能在的最右区间的左端索引, n=len(Q)+1=len(U)-5
+        # 第一步：计算节点矢量
+        U = self.paraAndNodVect(Q) 
+        # 第二步：反算n+2个控制点，采用自由端点边界条件
+        h = [1.0 for i in range(len(Q))]
+        P = [[0 for i in range(4)] for i in range(len(Q)+2)] # 初始化四维控制点集
+        Q4 = self.weigTyvalPoint(Q, h) # 四维型值点
+        P[0] = Q4[0] 
+        P[len(Q)+1] = Q4[-1]
+        P[1] = P[0] # 使用自由端点边界条件
+        P[len(Q)] = P[len(Q)+1] # 使用自由端点边界条件
+        P = self.solveTridiagonal(Q4, U, P)
+        # 第三步：求出要求密度点的曲线
+        C = [[0 for i in range(3)] for i in range(numpoi)]
+        for i in range(numpoi-1):
+            C[i] = self.curvePointNURBS(U, P, i/(numpoi-1))
+        C[numpoi-1] = self.curvePointNURBS(U, P, 1)
         return C
 
     # 已知节点向量和控制点向量，求曲面上的点
@@ -293,52 +340,9 @@ if __name__ == '__main__':
     # ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
     # ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
     # plt.show() # 显示图像
-    # logging.info('---测试实际曲面采样数据---')
-    # ptS = np.loadtxt('dataS02.txt') # 下载型值点数据
-    # ptSA = ptS.tolist() # 把numpy变为list
-    # nS = 3 # 行数
-    # mS = 3 # 列数
-    # QS = [[0 for i in range(mS)] for i in range(nS)]
-    # for j in range(mS):
-    #     for i in range(nS):
-    #         QS[i][j] = ptS[nS*j+i]
-    # U, V, P = BS.globalSurfInterp(QS)
-    # n = len(U) - 5 # 横向u能在的最右区间的左端索引
-    # m = len(V) - 5 # 纵向v能在的最右区间的左端索引
-    # numIn = 30
-    # SIn = [[0 for i in range(numIn+1)] for i in range(numIn+1)] # 生成的曲面采样点
-    # for i in range(numIn+1):
-    #     logging.info(i)
-    #     u = i / numIn
-    #     for j in range(numIn+1):
-    #         v = j / numIn
-    #         SIn[i][j] = BS.surfacePoint(n, U, m, V, P, u, v)
-    # # 画图
-    # fig = plt.figure()
-    # ax = Axes3D(fig)
-    # SInA = np.array(SIn) # 把list变为array
-    # ax.scatter((SInA[:,:,0]).tolist(), (SInA[:,:,1]).tolist(), (SInA[:,:,2]).tolist(), c='r',s=5)
-    # # 添加坐标轴标记及坐标标题
-    # ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
-    # ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
-    # ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
-    # plt.show() # 显示图像
+    logging.info('---测试算法对于实际曲面采样数据的曲面重构效果---')
     SA = np.loadtxt('yiziban.txt') # 下载型值点数据
     SA[:,1] = SA[:,1] + SA[:,3]
-    #ptSA = ptS.tolist() # 把numpy变为list
-    # 画图
-    fig = plt.figure()
-    ax = Axes3D(fig)
-    #SA = np.array(S) # 把list变为array
-    #np.savetxt('data2gen', CurA) # 保存曲线点集数据到.txt文件
-    ax.scatter((SA[:,0]).tolist(), (SA[:,1]).tolist(), (SA[:,2]).tolist(), c='r')
-    # 添加坐标轴标记及坐标标题
-    ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
-    ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
-    ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
-    plt.show() # 显示图像
-    logging.info(len(SA))
-    logging.info('---重构每一列曲线---')
     Qtry = [0 for i in range(8)]
     flag = 0
     qtag = 0
@@ -348,43 +352,13 @@ if __name__ == '__main__':
             qtag = qtag + 1
             flag = i + 1
     numpoi = 10
-    QtryA = np.array(Qtry[4])
-    qa = BS.curvePlot(Qtry[2], numpoi) # 求得曲线上的点集
-    logging.info('qa is %s' % qa)
-    logging.info('---测试curvePlot---')
-    numpoi = 10
     Cur = [0 for i in range(8)]
     for i in range(8):
-        Cur[i] = BS.curvePlot(Qtry[i], numpoi) # 求得曲线上的点集
-    logging.info('Cur is %s' % Cur[2])
-    # 画图
-    fig = plt.figure()
-    ax = Axes3D(fig)
-    CurA = np.array(Cur) # 把list变为array
-    #np.savetxt('data2gen', CurA) # 保存曲线点集数据到.txt文件
-    ax.scatter((CurA[4,:,0]).tolist(), (CurA[4,:,1]).tolist(), (CurA[4,:,2]).tolist(), c='r')
-    ax.scatter((QtryA[:,0]).tolist(), (QtryA[:,1]).tolist(), (QtryA[:,2]).tolist(), c='b')
-    # 添加坐标轴标记及坐标标题
-    ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
-    ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
-    ax.set_zlabel('Z',fontdict={'size':15,'color':'black'})
-    plt.show() # 显示图像
-
-
-
-
-
-    Cur = [[[0 for i in range(3)] for i in range(8)] for i in range(numpoi)]
-    CurT = np.array(Cur)
-    for i in range(8):
-        CurT[:,i,:] = np.array(BS.curvePlot(Qtry[i], numpoi))
-    #Cur = BS.curvePlot(Qtry[1], numpoi) # 求得曲线上的点集
-    Cur = CurT.tolist()
-    logging.info(Cur)
+        Cur[i] = BS.curvePlotNURBS(Qtry[i], numpoi) # 求得曲线上的点集
     U, V, P = BS.globalSurfInterp(Cur)
     n = len(U) - 5 # 横向u能在的最右区间的左端索引
     m = len(V) - 5 # 纵向v能在的最右区间的左端索引
-    numIn = 50 
+    numIn = 100 
     SIn = [[0 for i in range(numIn+1)] for i in range(numIn+1)] # 生成的曲面采样点
     for i in range(numIn+1):
         logging.info(i)
@@ -396,7 +370,7 @@ if __name__ == '__main__':
     fig = plt.figure()
     ax = Axes3D(fig)
     SInA = np.array(SIn) # 把list变为array
-    ax.scatter((CurT[:,:,0]).tolist(), (CurT[:,:,1]).tolist(), (CurT[:,:,2]).tolist(), c='r')
+    ax.scatter((SInA[:,:,0]).tolist(), (SInA[:,:,1]).tolist(), (SInA[:,:,2]).tolist(), c='r')
     # 添加坐标轴标记及坐标标题
     ax.set_xlabel('X',fontdict={'size':15,'color':'black'})
     ax.set_ylabel('Y',fontdict={'size':15,'color':'black'})
