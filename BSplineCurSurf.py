@@ -343,7 +343,7 @@ if __name__ == '__main__':
     logging.info('---测试算法对于实际曲面采样数据的曲面重构效果---')
     SA = np.loadtxt('yiziban.txt') # 下载型值点数据
     SA[:,1] = SA[:,1] + SA[:,3]
-    Qtry = [0 for i in range(8)]
+    Qtry = [0 for i in range(8)] # 已知有8列型值点
     flag = 0
     qtag = 0
     for i in range(0,len(SA)):
@@ -353,8 +353,8 @@ if __name__ == '__main__':
             flag = i + 1
     # 简单处理，使得每一列的型值点都为numpoi个
     numpoi = 10
-    Cur = [0 for i in range(8)]
-    for i in range(8):
+    Cur = [0 for i in range(qtag)]
+    for i in range(qtag):
         Cur[i] = BS.curvePlotNURBS(Qtry[i], numpoi) # 求得曲线上的点集
     U, V, P = BS.globalSurfInterp(Cur)
     n = len(U) - 5 # 横向u能在的最右区间的左端索引
